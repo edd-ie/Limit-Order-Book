@@ -21,14 +21,10 @@ jobs:
 
       - name: Configure
         run: |
-          cmake -B build \
-                -G Ninja \
-                -DCMAKE_BUILD_TYPE=Release \
-                -DCMAKE_CXX_COMPILER=clang++ \
-                -DCMAKE_CXX_STANDARD=23
+          cmake -B build --preset default
 
       - name: Build
-        run: cmake --build build
+        run: cmake --build --preset default
 
       - name: Run executable
-        run: ./build/limit_order_book
+        run: ./build/default/limit_order_book
