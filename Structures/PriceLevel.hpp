@@ -14,9 +14,9 @@ class PriceLevel{
         PriceLevel operator=(const PriceLevel&) = delete;
 
         PriceLevel(PriceLevel&&) noexcept = default;
-        PriceLevel& operator=(PriceLevel&&) noexcept;
+        // PriceLevel& operator=(PriceLevel&&) noexcept;
 
-        PriceLevel& operator+=(Order order) noexcept;
+        // PriceLevel& operator+=(Order order) noexcept;
         
-        uint32 pop(uint32 amount) noexcept;
+        // uint32 pop(uint32 amount) noexcept;
 };
