@@ -1,4 +1,8 @@
+#pragma once
+
 #include <deque>
+#include <utility>
+#include <vector>
 #include "Order.hpp"
 
 class PriceLevel{
@@ -14,9 +18,13 @@ class PriceLevel{
         PriceLevel operator=(const PriceLevel&) = delete;
 
         PriceLevel(PriceLevel&&) noexcept = default;
-        // PriceLevel& operator=(PriceLevel&&) noexcept;
+        PriceLevel& operator=(PriceLevel&&) noexcept = default;
 
-        // PriceLevel& operator+=(Order order) noexcept;
+        PriceLevel& operator+=(Order&& order) noexcept;
         
-        // uint32 pop(uint32 amount) noexcept;
+        [[nodiscard]] Order& pop() noexcept;
+        [[nodiscard]] Order& peek() noexcept;
+        [[nodiscard]] uint32 quantity() const noexcept;
+
+        [[nodiscard]] std::pair<uint32, std::deque<Order>> get_shares(const uint32 amount) noexcept;
 };
