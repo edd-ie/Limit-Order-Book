@@ -22,6 +22,7 @@
       "name": "windows",
       "inherits": "default",
       "cacheVariables": {
+        "CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
         "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
         "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
       }

@@ -1,32 +1,29 @@
 #pragma once
 
-#include <chrono>
 #include <cstdint>
 
+namespace lob {
 enum class Side{
     Buy = 0,
     Sell = 1
 };
 
-using TimePoint = std::chrono::high_resolution_clock::time_point;
-using uint64 = std::uint64_t;
-using uint32 = std::uint32_t;
+using OrderId = std::uint64_t;
+using Price = std::uint32_t;
+using Quantity = std::uint32_t;
 
 class Order{
-    // Aliases
     
 
     // Members
-    uint64 id_;
-    uint32 price_;
-    uint32 quantity_;
-    TimePoint arrival_time_;
+    OrderId id_;
+    Price price_;
+    Quantity quantity_;
     Side side_;
 
     public:
-        static inline uint64 next_id = 0;
 
-        Order(uint32 price_in, uint32 quantity_in, Side side_in);
+        Order(OrderId id_in, Price price_in, Quantity quantity_in, Side side_in);
         ~Order() = default;
 
         // Copy        
@@ -36,23 +33,17 @@ class Order{
         // Move
         Order(Order&& order) noexcept = default;
         Order& operator=(Order&&) noexcept = default;
-
-        // Operators
-        bool operator==(const Order &other) const noexcept;
-        bool operator<(const Order &other) const noexcept;
-        bool operator>(const Order &other) const noexcept;
         
-        Order& operator-=(const uint32 amount) noexcept;
 
         // Accessors
-        [[nodiscard]] uint64 id() const noexcept;
-        [[nodiscard]] uint32 price() const noexcept;
-        [[nodiscard]] uint32 quantity() const noexcept;
-        [[nodiscard]] TimePoint arrival_time() const noexcept;
-        [[nodiscard]] Side side() const noexcept;
-        [[nodiscard]] bool is_filled() const noexcept;
+        [[nodiscard]] OrderId id() const noexcept {return id_;};
+        [[nodiscard]] Price price() const noexcept {return price_;};
+        [[nodiscard]] Quantity quantity() const noexcept {return quantity_;};
+        [[nodiscard]] Side side() const noexcept {return side_;};
+        [[nodiscard]] bool is_filled() const noexcept {return quantity_ == 0;};
         
         // Mutator
-        void update_quantity(const uint32 amount) noexcept;
+        [[nodiscard]] Quantity fill(const Quantity amount) noexcept;
         
 };
+}

@@ -6,5 +6,5 @@ int main() {
     std::vector<int> v;
     std::print("Running");
     
-    Order sale{1005, 50, Side::Sell};
+    lob::Order sale{123, 1001, 50, lob::Side::Sell};
 }
