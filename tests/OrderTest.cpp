@@ -1,10 +1,11 @@
-#include "gtest/gtest.h"
+#include <utility>
 #include <gtest/gtest.h>
 #include "Order.hpp"
 
 TEST(OrderTest, Initialization) {
     lob::Order order{12,100, 50, lob::Side::Buy};
     
+    EXPECT_EQ(order.id(), 12);
     EXPECT_EQ(order.price(), 100);
     EXPECT_EQ(order.quantity(), 50);
     EXPECT_EQ(order.side(), lob::Side::Buy);
@@ -42,4 +43,27 @@ TEST(OrderTest, FillZeroQuantity) {
 }
 
 
+// Test fill more than available quantity
+TEST(OrderTest, FillOverQuantity) {
+    lob::Order order{12, 100, 50, lob::Side::Buy};
+    
+    EXPECT_EQ(order.fill(100), 50);
+    EXPECT_EQ(order.quantity(), 0);
+}
 
+TEST(OrderTest,MoveSemantics){
+    lob::Order order{12, 100, 50, lob::Side::Buy};
+    auto newOrder = std::move(order);
+    
+    EXPECT_EQ(newOrder.id(), 12);
+    EXPECT_EQ(newOrder.price(), 100);
+    EXPECT_EQ(newOrder.quantity(), 50);
+    EXPECT_EQ(newOrder.side(), lob::Side::Buy);
+
+    lob::Order order2{13, 130, 50, lob::Side::Sell};
+    newOrder = std::move(order2);
+    
+    EXPECT_EQ(newOrder.id(), 13);
+    EXPECT_EQ(newOrder.price(), 130);
+    EXPECT_EQ(newOrder.side(), lob::Side::Sell);
+}

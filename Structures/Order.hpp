@@ -36,11 +36,11 @@ class Order{
         
 
         // Accessors
-        [[nodiscard]] OrderId id() const noexcept {return id_;};
-        [[nodiscard]] Price price() const noexcept {return price_;};
-        [[nodiscard]] Quantity quantity() const noexcept {return quantity_;};
-        [[nodiscard]] Side side() const noexcept {return side_;};
-        [[nodiscard]] bool is_filled() const noexcept {return quantity_ == 0;};
+        [[nodiscard]] OrderId id() const noexcept {return id_;}
+        [[nodiscard]] Price price() const noexcept {return price_;}
+        [[nodiscard]] Quantity quantity() const noexcept {return quantity_;}
+        [[nodiscard]] Side side() const noexcept {return side_;}
+        [[nodiscard]] bool is_filled() const noexcept {return quantity_ == 0;}
         
         // Mutator
         [[nodiscard]] Quantity fill(const Quantity amount) noexcept;
