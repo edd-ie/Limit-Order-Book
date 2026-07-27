@@ -44,6 +44,6 @@ class Order{
         
         // Mutator
         [[nodiscard]] Quantity fill(const Quantity amount) noexcept;
-        
+        [[nodiscard("Order was Cancelled, decrease PriceLevel quantity")]] Quantity cancel() noexcept;
 };
 }

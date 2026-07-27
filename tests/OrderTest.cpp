@@ -51,6 +51,14 @@ TEST(OrderTest, FillOverQuantity) {
     EXPECT_EQ(order.quantity(), 0);
 }
 
+// Test Order cancellation
+TEST(OrderTest, CancelOrder) {
+    lob::Order order{12, 100, 50, lob::Side::Buy};
+    
+    EXPECT_EQ(order.cancel(), 50);
+    EXPECT_TRUE(order.is_filled());
+}
+
 TEST(OrderTest,MoveSemantics){
     lob::Order order{12, 100, 50, lob::Side::Buy};
     auto newOrder = std::move(order);

@@ -12,4 +12,10 @@ namespace lob {
         quantity_ -= filled;
         return filled; // Returns actual qty executed
     }
+
+    Quantity Order::cancel() noexcept{
+        const Quantity amount = quantity_;
+        quantity_ = 0;
+        return amount;
+    }
 };

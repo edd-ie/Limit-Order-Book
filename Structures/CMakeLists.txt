@@ -11,6 +11,7 @@ target_sources(Structures
         FILES
             Order.hpp
             PriceLevel.hpp
+            Report.hpp
 )
 
 # Apply warning and optimization flags to the library

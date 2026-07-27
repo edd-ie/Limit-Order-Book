@@ -37,3 +37,11 @@ Here's why building this properly is an investment, not overhead. When you write
 **Build order for your next session:** wire Catch2 in via vcpkg + CTest, transcribe the paper scenarios as unit tests (watch the partial-fill one catch your current `fill` bug as its first act), then write `check_invariants`, then the seeded generator loop. Roughly a day of work, and everything you build for the rest of the project sits on top of it.
 
 One more habit worth stating because it's your brand already: when the harness catches something, write the postmortem in your notes — symptom, seed, root cause, fix, which invariant caught it. By project's end you'll have a debugging log that reads exactly like your ACIC technical reports, and _that_ document, linked from the README, is as impressive to a hiring manager as the benchmark numbers.
+
+## System Tests Considerations
+
+1. Track max tombstone count as a harness statistic
+
+- A tombstone(_cancelled order in the queue_) deep in a `PriceLevel` lingers until everything ahead of it trades or the level drains
+
+2.  Benchmark scan-cancel vs. tombstone-cancel vs. unlink-cancel, three designs with measured trade-offs,

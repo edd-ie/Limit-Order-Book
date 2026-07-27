@@ -49,3 +49,7 @@ Price price_;
 Quantity quantity_;
 std::deque<Order> orders_{};
 ```
+
+## Goals
+
+`PriceLevels` - intrusive lists make mid-queue removal a true O(1) physical unlink, eliminating tombstones entirely

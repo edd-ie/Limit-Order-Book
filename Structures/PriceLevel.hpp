@@ -2,7 +2,9 @@
 
 #include <deque>
 #include <utility>
+#include <vector>
 #include "Order.hpp"
+#include "Report.hpp"
 
 namespace lob {
     class PriceLevel{
@@ -20,12 +22,14 @@ namespace lob {
             PriceLevel(PriceLevel&&) noexcept = default;
             PriceLevel& operator=(PriceLevel&&) noexcept = default;
 
-            PriceLevel& operator+=(Order&& order) noexcept;
-            
-            [[nodiscard]] Order& pop() noexcept;
-            [[nodiscard]] Order& peek() noexcept;
-            Quantity quantity() const noexcept;
+            [[nodiscard]] Price price() const noexcept {return price_;}
+            [[nodiscard]] Quantity quantity() const noexcept {return quantity_;}
 
-            [[nodiscard]] std::pair<Quantity, std::deque<Order>> get_shares(const Quantity amount) noexcept;
-    };
+            void pop() noexcept;
+            Order& push(Order&& order) noexcept;
+            [[nodiscard]] Order& peek() noexcept;
+        
+            std::pair<Quantity, std::vector<Report>> execute(Quantity amount) noexcept;
+
+        };
 };
