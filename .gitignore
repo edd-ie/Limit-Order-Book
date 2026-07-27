@@ -3,3 +3,4 @@ build
 .clangd
 .dockerignore
 compile_*
+.gitignore
