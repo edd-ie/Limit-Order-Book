@@ -5,36 +5,52 @@
 
 namespace lob {
     PriceLevel::PriceLevel(const Price price):
-        price_(price), quantity_(0){};
+        price_(price){}
 
-    void PriceLevel::pop() noexcept{
-        if(!orders_.empty()){
-            quantity_ -= orders_.front().quantity();
-            orders_.pop_front();
-        }
-    }
 
-    Order& PriceLevel::push(Order&& order) noexcept{
+
+    Order& PriceLevel::push(Order&& order){
+        assert(order.price() == price_);
         orders_.push_back(std::move(order));
         quantity_ += orders_.back().quantity();
         return orders_.back();
     }
 
-    Order& PriceLevel::peek() noexcept{
-        return orders_.front();
+    
+
+    bool PriceLevel::empty_queue() const {
+        return orders_.empty();
+    }
+    
+    bool PriceLevel::is_exhausted() const {
+        return quantity_ == 0;
     }
 
-    std::pair<Quantity, std::vector<Report>> PriceLevel::execute(Quantity amount) noexcept{
-        std::pair<Quantity, std::vector<Report>> report;
+    /**
+     * @brief cancels an order and decrements the cached total.
+     * If the total goes to 0, the queue will be cleared
+     * 
+     * @param order to be cancelled. Object may be destroyed; caller must not dereference its pointer after this returns
+     * @return Quantity of the cancelled order
+     */
+    Quantity PriceLevel::cancel(Order& order) noexcept{
+        assert(order.price() == price_);
+        Quantity amount =  order.cancel();
+        quantity_ -= amount;
+        if(quantity_ == 0)
+            orders_.clear();
+        return amount;
+    }
+
+    ExecutionResult PriceLevel::execute(Quantity amount) {
+        ExecutionResult report{};
         if(quantity_ == 0){
-            report.first = quantity_;
-            report.second = {};
+            report.fulfilled = 0;
             return report;
         }
         
         Quantity fulfilled = 0;
         std::vector<Report> executions;
-        executions.reserve(orders_.size());
 
         while(fulfilled < amount && !orders_.empty()){
             Order& current = orders_.front();
@@ -43,19 +59,19 @@ namespace lob {
                 orders_.pop_front();
                 continue;
             }
-            Report details{current.id(), price_, current.fill(amount), false};
+            Report details{current.id(), price_, current.fill(amount-fulfilled), false};
 
             fulfilled += details.quantity;
             quantity_ -= details.quantity;
             if(current.is_filled()){
-                details.filled = true;
+                details.fully_filled = true;
                 orders_.pop_front();
             }
             executions.push_back(std::move(details));
         }
 
-        report.first = fulfilled;
-        report.second = std::move(executions);
+        report.fulfilled = fulfilled;
+        report.reports = std::move(executions);
 
         return report;
     }

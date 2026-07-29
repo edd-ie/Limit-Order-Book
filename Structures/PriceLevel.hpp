@@ -1,15 +1,14 @@
 #pragma once
 
 #include <deque>
-#include <utility>
-#include <vector>
 #include "Order.hpp"
 #include "Report.hpp"
+#include <cassert>
 
 namespace lob {
     class PriceLevel{
         Price price_;
-        Quantity quantity_;
+        Quantity quantity_{0};
         std::deque<Order> orders_{};
 
         public:
@@ -17,7 +16,7 @@ namespace lob {
             ~PriceLevel() = default;
 
             PriceLevel(const PriceLevel&) = delete;
-            PriceLevel operator=(const PriceLevel&) = delete;
+            PriceLevel& operator=(const PriceLevel&) = delete;
 
             PriceLevel(PriceLevel&&) noexcept = default;
             PriceLevel& operator=(PriceLevel&&) noexcept = default;
@@ -25,11 +24,23 @@ namespace lob {
             [[nodiscard]] Price price() const noexcept {return price_;}
             [[nodiscard]] Quantity quantity() const noexcept {return quantity_;}
 
-            void pop() noexcept;
-            Order& push(Order&& order) noexcept;
-            [[nodiscard]] Order& peek() noexcept;
+            
+            Order& push(Order&& order);
+            [[nodiscard]] bool empty_queue() const;
+            [[nodiscard]] bool is_exhausted() const;
         
-            std::pair<Quantity, std::vector<Report>> execute(Quantity amount) noexcept;
+            Quantity cancel(Order& order) noexcept;
+            ExecutionResult execute(Quantity amount);
+
+            [[nodiscard]] Order& peek() noexcept {
+                assert(!orders_.empty());
+                return orders_.front();
+            }
+
+            [[nodiscard]] const Order& peek() const noexcept {
+                assert(!orders_.empty());
+                return orders_.front();
+            }
 
         };
-};
+}
