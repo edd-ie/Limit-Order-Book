@@ -16,15 +16,6 @@ namespace lob {
         return orders_.back();
     }
 
-    
-
-    bool PriceLevel::empty_queue() const {
-        return orders_.empty();
-    }
-    
-    bool PriceLevel::is_exhausted() const {
-        return quantity_ == 0;
-    }
 
     /**
      * @brief cancels an order and decrements the cached total.
@@ -35,7 +26,7 @@ namespace lob {
      */
     Quantity PriceLevel::cancel(Order& order) noexcept{
         assert(order.price() == price_);
-        Quantity amount =  order.cancel();
+        const Quantity amount =  order.cancel();
         quantity_ -= amount;
         if(quantity_ == 0)
             orders_.clear();
@@ -45,6 +36,7 @@ namespace lob {
     ExecutionResult PriceLevel::execute(Quantity amount) {
         ExecutionResult report{};
         if(quantity_ == 0){
+            assert(orders_.empty());
             report.fulfilled = 0;
             return report;
         }
@@ -72,6 +64,9 @@ namespace lob {
 
         report.fulfilled = fulfilled;
         report.reports = std::move(executions);
+
+        if(quantity_ == 0)
+            orders_.clear();
 
         return report;
     }

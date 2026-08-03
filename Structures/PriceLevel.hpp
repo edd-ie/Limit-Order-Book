@@ -24,13 +24,47 @@ namespace lob {
             [[nodiscard]] Price price() const noexcept {return price_;}
             [[nodiscard]] Quantity quantity() const noexcept {return quantity_;}
 
-            
+            /**
+             * @brief Add an order to the PriceLevel
+             * 
+             * @param order 
+             * @return Order& 
+             */
             Order& push(Order&& order);
-            [[nodiscard]] bool empty_queue() const;
-            [[nodiscard]] bool is_exhausted() const;
+
+            /**
+             * @brief Check if the PriceLevel queue is empty;
+             * quantity() == 0 ⟺ empty_queue()
+             * 
+             * @return true 
+             * @return false 
+             */
+            [[nodiscard]] bool empty_queue() const{return orders_.empty();}
+
+            /**
+             * @brief check if the total quantity of shares is zero;
+             * quantity() == 0 ⟺ empty_queue()
+             * 
+             * @return true 
+             * @return false 
+             */
+            [[nodiscard]] bool is_exhausted() const{return quantity_==0;}
         
+            /**
+             * @brief Cancel a live order from the PriceLevel.
+             * 
+             * @param order 
+             * @return Quantity amount held by the cancelled order
+             */
             Quantity cancel(Order& order) noexcept;
-            ExecutionResult execute(Quantity amount);
+
+            /**
+             * @brief Execute a quantity of live shares from the PriceLevel.
+             * 
+             * @param amount quantity requested.
+             * @return ExecutionResult quantity of the requested amount actually fulfilled and which orders were used.
+             */
+            [[nodiscard]]ExecutionResult execute(Quantity amount);
 
             [[nodiscard]] Order& peek() noexcept {
                 assert(!orders_.empty());
