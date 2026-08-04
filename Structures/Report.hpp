@@ -5,7 +5,7 @@
 #include <string>
 #include <vector>
 namespace lob {
-    struct Report{
+    struct OrderReport{
         OrderId id;
         Price price;
         Quantity quantity;
@@ -23,11 +23,27 @@ namespace lob {
         }
     } ;
 
-    struct ExecutionResult{
+    struct CancelReport{
+        OrderId id;
+        Price price;
+        Quantity quantity;
+
+         // Convert CancelReport to string
+        std::string to_string() const {
+            std::ostringstream oss;
+            oss << "{id: " << id
+                << ", price: " << price
+                << ", quantity: " << quantity
+                << "}";
+            return oss.str();
+        }
+    } ;
+
+    struct ExecutionReport{
         Quantity fulfilled;
-        std::vector<Report> reports;
+        std::vector<OrderReport> reports;
         
-        // Convert ExecutionResult to string
+        // Convert ExecutionReport to string
         std::string to_string() const {
             std::ostringstream oss;
             oss << "ExecutionResult: \n{ \n\tfulfilled: " << fulfilled

@@ -50,12 +50,6 @@ namespace lob {
              */
             [[nodiscard]] bool is_exhausted() const{return quantity_==0;}
         
-            /**
-             * @brief Cancel a live order from the PriceLevel.
-             * 
-             * @param order 
-             * @return Quantity amount held by the cancelled order
-             */
             Quantity cancel(Order& order) noexcept;
 
             /**
@@ -64,7 +58,7 @@ namespace lob {
              * @param amount quantity requested.
              * @return ExecutionResult quantity of the requested amount actually fulfilled and which orders were used.
              */
-            [[nodiscard]]ExecutionResult execute(Quantity amount);
+            [[nodiscard]]ExecutionReport execute(Quantity amount);
 
             [[nodiscard]] Order& peek() noexcept {
                 assert(!orders_.empty());

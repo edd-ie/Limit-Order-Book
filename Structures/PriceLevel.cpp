@@ -33,8 +33,8 @@ namespace lob {
         return amount;
     }
 
-    ExecutionResult PriceLevel::execute(Quantity amount) {
-        ExecutionResult report{};
+    ExecutionReport PriceLevel::execute(Quantity amount) {
+        ExecutionReport report{};
         if(quantity_ == 0){
             assert(orders_.empty());
             report.fulfilled = 0;
@@ -42,7 +42,7 @@ namespace lob {
         }
         
         Quantity fulfilled = 0;
-        std::vector<Report> executions;
+        std::vector<OrderReport> executions;
 
         while(fulfilled < amount && !orders_.empty()){
             Order& current = orders_.front();
@@ -51,7 +51,7 @@ namespace lob {
                 orders_.pop_front();
                 continue;
             }
-            Report details{current.id(), price_, current.fill(amount-fulfilled), false};
+            OrderReport details{current.id(), price_, current.fill(amount-fulfilled), false};
 
             fulfilled += details.quantity;
             quantity_ -= details.quantity;

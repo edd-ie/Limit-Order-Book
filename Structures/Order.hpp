@@ -1,18 +1,9 @@
 #pragma once
 
-#include <cstdint>
+#include "Units.hpp"
 
 namespace lob {
-enum class Side{
-    Buy = 0,
-    Sell = 1
-};
-
-using OrderId = std::uint64_t;
-using Price = std::uint32_t;
-using Quantity = std::uint32_t;
-
-class Order{
+    class Order{
     
 
     // Members
@@ -40,10 +31,22 @@ class Order{
         [[nodiscard]] Price price() const noexcept {return price_;}
         [[nodiscard]] Quantity quantity() const noexcept {return quantity_;}
         [[nodiscard]] Side side() const noexcept {return side_;}
+
+        /**
+         * @brief Check if quantity() == 0 
+         * 
+         * @return true 
+         * @return false 
+         */
         [[nodiscard]] bool is_filled() const noexcept {return quantity_ == 0;}
         
-        // Mutator
+        /**
+         * @brief Execute a specified quantity of orders
+         * 
+         * @param amount 
+         * @return Quantity amount of the requested orders fulfilled
+         */
         [[nodiscard]] Quantity fill(const Quantity amount) noexcept;
-        [[nodiscard("Order was Cancelled, decrease PriceLevel quantity")]] Quantity cancel() noexcept;
+        [[nodiscard("Alert! Order was Cancelled.")]] Quantity cancel() noexcept;
 };
 }

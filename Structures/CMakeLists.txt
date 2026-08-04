@@ -4,6 +4,8 @@ target_sources(Structures
     PRIVATE
         Order.cpp
         PriceLevel.cpp
+        Book.cpp
+        
     
     PUBLIC
         FILE_SET HEADERS
@@ -12,6 +14,8 @@ target_sources(Structures
             Order.hpp
             PriceLevel.hpp
             Report.hpp
+            Book.hpp
+            Units.hpp
 )
 
 # Apply warning and optimization flags to the library
