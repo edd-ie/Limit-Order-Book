@@ -1,4 +1,5 @@
 #include "Book.hpp"
+#include "Order.hpp"
 #include "gtest/gtest.h"
 #include <gtest/gtest.h>
 
@@ -15,6 +16,15 @@ class BkTest : public testing::Test{
 
 };
 
-TEST_F(BkTest, BookSetup){
-    
+TEST(BookTest, BookSetup){
+    lob::Book bk{"Stock"};
+    auto add = bk.add(1, 1001, 300, lob::Side::Sell);
+
+    EXPECT_EQ(bk.symbol(), "Stock");
+    EXPECT_EQ(add.size(), 0);
+
+    add = bk.add(1, 1001, 300, lob::Side::Buy);
+    EXPECT_EQ(add[0].fulfilled, 300);
+    EXPECT_EQ(add[0].reports[0].quantity, 300);
+    EXPECT_TRUE(add[0].reports[0].fully_filled);
 }

@@ -1,67 +1,86 @@
 #include "Book.hpp"
-#include "Order.hpp"
-#include "PriceLevel.hpp"
+#include <cassert>
+#include <utility>
 
 namespace lob {
-    std::vector<ExecutionReport> Book::add(const OrderId id, const Price price, Quantity quantity, const Side side) noexcept{
+
+    void Book::eraseFilledIds(const ExecutionReport& report) noexcept {
+        for (const auto& order : report.reports) {
+            if (order.fully_filled) {
+                id_map_.erase(order.id);
+            }
+        }
+    }
+
+    std::vector<ExecutionReport> Book::add(const OrderId id, const Price price, Quantity quantity, const Side side) {
         std::vector<ExecutionReport> execution{};
 
-        auto fulfillOrder = [&](auto& data){
-            auto& level = data.begin()->second;
-            Price orderPrice = level.price();
+        auto fulfillOrder = [&](auto& data) {
+            auto it = data.begin();
+            auto& level = it->second;
 
             auto result = level.execute(quantity);
             quantity -= result.fulfilled;
 
-            if(level.is_exhausted())
-                data.erase(orderPrice);
-            execution.push_back(result);
+            eraseFilledIds(result);
+
+            if (level.is_exhausted()) {
+                data.erase(it); // Erase by iterator directly
+            }
+            execution.push_back(std::move(result)); // Move result into vector
         };
 
-        auto createOrder = [&](auto& data){
-            if(!data.contains(price))
-                data.try_emplace(price, PriceLevel(price));
-            data[price].push(Order{id, price, quantity, side});
+        auto createOrder = [&](auto& data) {
+            auto [it, inserted] = data.try_emplace(price, price);
+            Order& order = it->second.push(Order{id, price, quantity, side});
             
+            // Register in id_map_
+            auto [entry, success] = id_map_.emplace(id, OrderPtr{.order_ = &order, .level_ = &it->second});
+            assert(success);
         };
 
         if (side == Side::Buy) {
             while (!sell_.empty() && price >= sell_.begin()->first && quantity > 0) {
                 fulfillOrder(sell_);
             }
-            if(quantity > 0)
+            if (quantity > 0) {
                 createOrder(buy_);
-            
-        }else {
+            }
+        } else {
             while (!buy_.empty() && price <= buy_.begin()->first && quantity > 0) {
                 fulfillOrder(buy_);
             }
-            if(quantity > 0)
+            if (quantity > 0) {
                 createOrder(sell_);
+            }
         }
 
         return execution;
     }
 
-    CancelReport Book::cancel(const OrderId id) noexcept{
-        if(id_map_.contains(id)){
-            auto& level = id_map_[id].level_;
-            auto& order = *id_map_[id].order_;
-            Price price = order.price();
-            
-            Quantity qty = level->cancel(order);
-            
-            if(level->is_exhausted()){
-                if(order.side() == Side::Buy)
-                    buy_.erase(price);
-                else
-                    sell_.erase(price);
-            }
-            id_map_.erase(id);
-
-            return {id, price, qty};
+    std::optional<CancelReport> Book::cancel(const OrderId id) noexcept {
+        auto it = id_map_.find(id);
+        if (it == id_map_.end()) {
+            return {};
         }
 
-        return {};
+        auto [order_ptr, level_ptr] = it->second;
+        const Price price = order_ptr->price();
+        const Side side = order_ptr->side();
+
+        const Quantity canceled_qty = level_ptr->cancel(*order_ptr);
+
+        if (level_ptr->is_exhausted()) {
+            if (side == Side::Buy) {
+                buy_.erase(price);
+            } else {
+                sell_.erase(price);
+            }
+        }
+
+        id_map_.erase(it); // Erase from map using iterator
+
+        return CancelReport{id, price, canceled_qty};
     }
-}
+
+} // namespace lob

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Order.hpp"
+#include "Units.hpp"
 #include <sstream>
 #include <string>
 #include <vector>
@@ -46,7 +46,7 @@ namespace lob {
         // Convert ExecutionReport to string
         std::string to_string() const {
             std::ostringstream oss;
-            oss << "ExecutionResult: \n{ \n\tfulfilled: " << fulfilled
+            oss << "ExecutionReport: \n{ \n\tfulfilled: " << fulfilled
                 << ", \n\treports: [\n\t\t";
 
             for (size_t i = 0; i < reports.size(); ++i) {
