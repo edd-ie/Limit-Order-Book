@@ -11,6 +11,10 @@ namespace lob {
         Quantity quantity_{0};
         std::deque<Order> orders_{};
 
+        using container=std::deque<Order>;
+        using iterator = typename container::iterator;
+        using const_iterator = typename container::const_iterator;
+
         public:
             PriceLevel(const Price price);
             ~PriceLevel() = default;
@@ -23,6 +27,11 @@ namespace lob {
 
             [[nodiscard]] Price price() const noexcept {return price_;}
             [[nodiscard]] Quantity quantity() const noexcept {return quantity_;}
+
+            iterator begin(){return orders_.begin();}
+            iterator end(){return orders_.end();}
+            const_iterator begin() const {return orders_.begin();}
+            const_iterator end() const {return orders_.end();}
 
             /**
              * @brief Add an order to the PriceLevel

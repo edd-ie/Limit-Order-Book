@@ -1,5 +1,8 @@
 #include "Book.hpp"
+#include "Units.hpp"
 #include <cassert>
+#include <cstddef>
+#include <print>
 #include <utility>
 
 namespace lob {
@@ -19,7 +22,7 @@ namespace lob {
             auto it = data.begin();
             auto& level = it->second;
 
-            auto result = level.execute(quantity);
+            ExecutionReport result = level.execute(quantity);
             quantity -= result.fulfilled;
 
             eraseFilledIds(result);
@@ -80,7 +83,87 @@ namespace lob {
 
         id_map_.erase(it); // Erase from map using iterator
 
-        return CancelReport{id, price, canceled_qty};
+        return CancelReport{id, price, canceled_qty, true};
     }
 
+    std::optional<Price>  Book::best_bid() const {
+        if (buy_.empty()) {
+            return {};
+        }
+        return buy_.begin()->first;
+    }
+    
+    std::optional<Price>  Book::best_ask() const {
+        if (sell_.empty()) {
+            return {};
+        }
+        return sell_.begin()->first;
+    }
+
+    std::optional<Quantity> Book::resting_quantity(OrderId id) const{
+        if (auto order = id_map_.find(id); order != id_map_.end()){
+            return order->second.order_->quantity();
+        }
+        return {};
+    }
+
+    std::optional<Quantity> Book::level_quantity(Side side, Price price)const{
+        if(side == Side::Sell){
+            if(auto level =  sell_.find(price); level != sell_.end()){
+                return level->second.quantity();
+            }
+        }
+        else{
+            if(auto level =  buy_.find(price); level != buy_.end()){
+                return level->second.quantity();
+            }
+        }
+        return {};
+    }
+
+    bool Book::check_map_validity() const{
+        for(auto order : id_map_){
+            if(order.second.order_->quantity() == 0){
+                return false;
+            }
+        }
+
+        for (auto level = buy_.begin(); level != buy_.end(); level++) {
+            auto &priceLevel = level->second;
+            if(priceLevel.is_exhausted()) return false;
+            for(auto order = priceLevel.begin(); order != priceLevel.end(); order++){
+                if (!id_map_.contains(order->id())) {
+                    return false;
+                }
+            }
+        }
+        for (auto level = sell_.begin(); level != sell_.end(); level++) {
+            auto &priceLevel = level->second;
+            if(priceLevel.is_exhausted()) return false;
+            for(auto order = priceLevel.begin(); order != priceLevel.end(); order++){
+                if (!id_map_.contains(order->id())) {
+                    return false;
+                }
+            }
+        }
+        return true;        
+    }
+
+    bool Book::check_levels_validity() const{
+        if (!buy_.empty() && !sell_.empty()){
+            if(buy_.begin()->first >=  sell_.begin()->first)
+                return false;
+        }
+        for (auto level = buy_.begin(); level != buy_.end(); level++) {
+            if(level->second.is_exhausted()) return false;
+        }
+        for (auto level = sell_.begin(); level != sell_.end(); level++) {
+            if(level->second.is_exhausted()) return false;
+        }
+        return true;        
+    }
+
+    bool Book::check_invariants() const{
+        return (check_map_validity() && check_levels_validity());
+    }
 } // namespace lob

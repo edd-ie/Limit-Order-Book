@@ -1,30 +1,203 @@
 #include "Book.hpp"
-#include "Order.hpp"
+#include "Report.hpp"
+#include "Units.hpp"
 #include "gtest/gtest.h"
 #include <gtest/gtest.h>
+#include <vector>
 
-class BkTest : public testing::Test{
+
+// bids: 1002 → [#3: 50, #4: 300]     1001 → [#2: 300]
+// asks: 1004 → [#5: 20, #6: 80]      1005 → [#7: 70, #8: 60]
+
+class BookTest : public testing::Test{
     protected:
-    lob::Book bk{"Stock"};
-    lob::Order ord2{2, 1001, 300, lob::Side::Buy};
-    lob::Order ord3{3, 1002, 50, lob::Side::Buy};
-    lob::Order ord4{4, 1002, 300, lob::Side::Buy};
-    lob::Order ord5{5, 1004, 20, lob::Side::Sell};
-    lob::Order ord6{6, 1004, 80, lob::Side::Sell};
-    lob::Order ord7{7, 1005, 70, lob::Side::Sell};
-    lob::Order ord8{8, 1005, 60, lob::Side::Sell};
+        lob::Book book{"Stock"};
+
+    void SetUp() override{
+        auto report = book.add(2, 1001, 300, lob::Side::Buy);
+        
+        report = book.add(3, 1002, 50, lob::Side::Buy);
+        report = book.add(4, 1002, 300, lob::Side::Buy);
+        
+        report = book.add(5, 1004, 20, lob::Side::Sell);
+        report = book.add(6, 1004, 80, lob::Side::Sell);
+        
+        report = book.add(7, 1005, 70, lob::Side::Sell);
+        report = book.add(8, 1005, 60, lob::Side::Sell);
+    }
+
+    void TearDown() override{
+        EXPECT_TRUE(book.check_invariants());
+    }
 
 };
 
-TEST(BookTest, BookSetup){
-    lob::Book bk{"Stock"};
-    auto add = bk.add(1, 1001, 300, lob::Side::Sell);
+TEST_F(BookTest, RestingAdd){
+    EXPECT_EQ(book.best_ask(), 1004);
 
-    EXPECT_EQ(bk.symbol(), "Stock");
-    EXPECT_EQ(add.size(), 0);
+    auto report = book.add(9, 1006, 100, lob::Side::Sell);
+    EXPECT_EQ(report.size(), 0);
+    EXPECT_EQ(book.ask_levels(), 3);
+    EXPECT_EQ(book.best_ask(), 1004);
 
-    add = bk.add(1, 1001, 300, lob::Side::Buy);
-    EXPECT_EQ(add[0].fulfilled, 300);
-    EXPECT_EQ(add[0].reports[0].quantity, 300);
-    EXPECT_TRUE(add[0].reports[0].fully_filled);
+    report = book.add(10, 1002, 10, lob::Side::Buy);
+    EXPECT_EQ(book.level_quantity(lob::Side::Buy, 1002), 360);
+    EXPECT_TRUE(book.check_invariants());
 }
+
+TEST_F(BookTest, FullFill){
+    auto report = book.add(9, 1004, 20, lob::Side::Buy);
+    
+    EXPECT_EQ(report.size(), 1);
+    EXPECT_EQ(report.begin()->fulfilled, 20);
+    EXPECT_TRUE(book.contains(6));
+    EXPECT_FALSE(book.contains(5));
+    EXPECT_FALSE(book.contains(9));
+    EXPECT_EQ(book.level_quantity(lob::Side::Sell, 1004), 80);
+    EXPECT_EQ(book.best_ask(), 1004);
+}
+
+TEST_F(BookTest, PartialFill){
+    auto report = book.add(9, 1004, 10, lob::Side::Buy);
+    
+    EXPECT_EQ(report.size(), 1);
+    EXPECT_EQ(report.begin()->fulfilled, 10);
+    EXPECT_EQ(report.begin()->reports.size(), 1);
+
+    EXPECT_TRUE(book.contains(6));
+    EXPECT_TRUE(book.contains(5));
+    EXPECT_FALSE(book.contains(9));
+
+    EXPECT_EQ(book.resting_quantity(5), 10);
+    EXPECT_EQ(book.level_quantity(lob::Side::Sell, 1004), 90);
+    EXPECT_EQ(book.best_ask(), 1004);
+}
+
+TEST_F(BookTest, LevelConsumption){
+    auto report = book.add(9, 1004, 100, lob::Side::Buy);
+    
+    EXPECT_EQ(report.size(), 1);
+    EXPECT_EQ(report.begin()->fulfilled, 100);
+    EXPECT_EQ(report.begin()->reports.size(), 2);
+    
+    EXPECT_FALSE(book.contains(6));
+    EXPECT_FALSE(book.contains(5));
+    EXPECT_FALSE(book.contains(9));
+    
+    EXPECT_EQ(book.ask_levels(), 1);
+    EXPECT_EQ(book.best_ask(), 1005);
+}
+
+TEST_F(BookTest, MultiLevelConsumption){
+    auto report = book.add(9, 1005, 200, lob::Side::Buy);
+    
+    EXPECT_EQ(report.size(), 2);
+    EXPECT_EQ(report.begin()->fulfilled, 100);
+    EXPECT_EQ(report.at(1).fulfilled, 100);
+    
+    EXPECT_FALSE(book.contains(6));
+    EXPECT_FALSE(book.contains(5));
+    EXPECT_FALSE(book.contains(9));
+    EXPECT_FALSE(book.contains(7));
+    EXPECT_TRUE(book.contains(8));
+
+    EXPECT_EQ(book.ask_levels(), 1);
+    EXPECT_EQ(book.best_ask(), 1005);
+    EXPECT_EQ(book.level_quantity(lob::Side::Sell, 1005), 30);
+
+    report = book.add(9, 1005, 100, lob::Side::Buy);
+    EXPECT_EQ(report.begin()->fulfilled, 30);
+    EXPECT_FALSE(book.best_ask());
+    EXPECT_FALSE(book.contains(8));
+    EXPECT_TRUE(book.contains(9));
+    EXPECT_EQ(book.resting_quantity(9), 70);
+    EXPECT_EQ(book.best_bid(), 1005);
+}
+
+TEST_F(BookTest, MultiLevelConsumption2){
+    auto report = book.add(9, 1001, 400, lob::Side::Sell);
+
+    EXPECT_EQ(report.begin()->fulfilled, 350);
+    EXPECT_EQ(report[1].fulfilled, 50);
+    EXPECT_EQ(report.size(), 2);
+    EXPECT_EQ(book.level_quantity(lob::Side::Sell, 1005) , 130);
+    EXPECT_FALSE(report[1].reports.begin()->fully_filled);
+    EXPECT_TRUE(book.best_ask());
+    EXPECT_FALSE(book.contains(3));
+    EXPECT_FALSE(book.contains(4));
+    EXPECT_TRUE(book.contains(2));
+    EXPECT_FALSE(book.contains(9));
+    EXPECT_EQ(book.best_bid(), 1001);
+}
+
+TEST_F(BookTest, LimitStop){
+    auto report = book.add(9, 1004, 500, lob::Side::Buy);
+
+    EXPECT_EQ(report.begin()->fulfilled, 100);
+    EXPECT_TRUE(book.best_ask());
+    EXPECT_FALSE(book.contains(5));
+    EXPECT_FALSE(book.contains(6));
+    EXPECT_TRUE(book.contains(7));
+    EXPECT_TRUE(book.contains(9));
+    EXPECT_EQ(book.resting_quantity(9), 400);
+    EXPECT_EQ(book.best_bid(), 1004);
+}
+
+TEST_F(BookTest, CancelFamily){
+    auto report = book.cancel(3);
+
+    EXPECT_EQ(report->id, 3);
+    EXPECT_EQ(report->price, 1002);
+    EXPECT_EQ(report->quantity, 50);
+    EXPECT_TRUE(report->cancelled);
+    EXPECT_FALSE(book.contains(3));
+    EXPECT_EQ(book.best_bid(), 1002);
+
+    report = book.cancel(2);
+    EXPECT_FALSE(book.contains(2));
+    EXPECT_EQ(book.bid_levels(), 1);
+    
+    EXPECT_EQ(book.best_bid(), 1002);
+    EXPECT_EQ(book.best_ask(), 1004);
+    EXPECT_TRUE(book.check_invariants());
+
+    report = book.cancel(99);
+    EXPECT_FALSE(report);
+
+    EXPECT_EQ(book.best_bid(), 1002);
+    EXPECT_EQ(book.best_ask(), 1004);
+    EXPECT_TRUE(book.check_invariants());
+}
+
+TEST_F(BookTest, Tombstone){
+    auto report = book.cancel(5);
+    EXPECT_FALSE(book.contains(5));
+    EXPECT_EQ(book.ask_levels(), 2);
+
+    auto report2 = book.add(9, 1004, 80, lob::Side::Buy);
+
+    EXPECT_EQ(report2.begin()->fulfilled, 80);
+    EXPECT_EQ(book.best_ask(), 1005);
+    EXPECT_EQ(book.ask_levels(), 1);
+    EXPECT_FALSE(book.contains(6));
+    EXPECT_EQ(report2[0].reports.size(), 1);
+    EXPECT_EQ(report2[0].reports[0].id, 6);
+    EXPECT_TRUE(book.check_invariants());
+}
+
+TEST_F(BookTest, CancelCross){
+    auto report = book.cancel(5);
+    report = book.cancel(6);
+    EXPECT_EQ(book.best_ask(), 1005);
+
+    auto report2 = book.add(9, 1004, 50, lob::Side::Buy);
+    EXPECT_EQ(report2.size(), 0);
+    EXPECT_EQ(book.best_bid(), 1004);
+    EXPECT_EQ(book.best_ask(), 1005);
+}
+
+TEST_F(BookTest, DuplicateIds){
+    EXPECT_DEBUG_DEATH(book.add(3, 1005, 10, lob::Side::Sell), ".*");
+}
+
+

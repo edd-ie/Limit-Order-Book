@@ -2,6 +2,8 @@
 
 #include "Order.hpp"
 #include "PriceLevel.hpp"
+#include "Units.hpp"
+#include <cstddef>
 #include <functional>
 #include <map>
 #include <optional>
@@ -38,10 +40,20 @@ namespace lob{
 
             [[nodiscard]]std::string_view symbol() const noexcept{return std::string_view{symbol_};}
 
-            [[nodiscard]]std::vector<ExecutionReport> add(const OrderId id, const Price price, Quantity quantity, const Side side);
-            [[nodiscard]]std::optional<CancelReport> cancel(const OrderId id) noexcept;
+            [[nodiscard]] std::vector<ExecutionReport> add(const OrderId id, const Price price, Quantity quantity, const Side side);
+            [[nodiscard]] std::optional<CancelReport> cancel(const OrderId id) noexcept;
 
+            [[nodiscard]] std::optional<Price> best_bid() const;
+            [[nodiscard]] std::optional<Price> best_ask() const;
 
+            [[nodiscard]] size_t bid_levels() const {return buy_.size();}
+            [[nodiscard]] size_t ask_levels() const {return sell_.size();}
+            [[nodiscard]] bool contains(OrderId id) const {return id_map_.contains(id);}
+            [[nodiscard]] std::optional<Quantity> resting_quantity(OrderId id) const;
+            [[nodiscard]] std::optional<Quantity> level_quantity(Side side, Price price)const;
 
+            [[nodiscard]] bool check_invariants() const;
+            [[nodiscard]] bool check_map_validity() const;
+            [[nodiscard]] bool check_levels_validity() const;
     };
 }
