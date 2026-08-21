@@ -3,11 +3,7 @@
 #include "Units.hpp"
 #include "gtest/gtest.h"
 #include <gtest/gtest.h>
-#include <vector>
 
-
-// bids: 1002 → [#3: 50, #4: 300]     1001 → [#2: 300]
-// asks: 1004 → [#5: 20, #6: 80]      1005 → [#7: 70, #8: 60]
 
 class BookTest : public testing::Test{
     protected:
@@ -27,7 +23,8 @@ class BookTest : public testing::Test{
     }
 
     void TearDown() override{
-        EXPECT_TRUE(book.check_invariants());
+        auto v = book.check_invariants(); 
+        EXPECT_FALSE(v.has_value()) << v.value_or("");
     }
 
 };
@@ -42,7 +39,6 @@ TEST_F(BookTest, RestingAdd){
 
     report = book.add(10, 1002, 10, lob::Side::Buy);
     EXPECT_EQ(book.level_quantity(lob::Side::Buy, 1002), 360);
-    EXPECT_TRUE(book.check_invariants());
 }
 
 TEST_F(BookTest, FullFill){
@@ -88,7 +84,7 @@ TEST_F(BookTest, LevelConsumption){
     EXPECT_EQ(book.best_ask(), 1005);
 }
 
-TEST_F(BookTest, MultiLevelConsumption){
+TEST_F(BookTest, BuyWalksAsks){
     auto report = book.add(9, 1005, 200, lob::Side::Buy);
     
     EXPECT_EQ(report.size(), 2);
@@ -114,13 +110,14 @@ TEST_F(BookTest, MultiLevelConsumption){
     EXPECT_EQ(book.best_bid(), 1005);
 }
 
-TEST_F(BookTest, MultiLevelConsumption2){
+TEST_F(BookTest, SellWalksBids){
     auto report = book.add(9, 1001, 400, lob::Side::Sell);
-
+    
+    EXPECT_EQ(report.size(), 2);
     EXPECT_EQ(report.begin()->fulfilled, 350);
     EXPECT_EQ(report[1].fulfilled, 50);
-    EXPECT_EQ(report.size(), 2);
-    EXPECT_EQ(book.level_quantity(lob::Side::Sell, 1005) , 130);
+    
+    EXPECT_EQ(book.level_quantity(lob::Side::Buy, 1001) , 250);
     EXPECT_FALSE(report[1].reports.begin()->fully_filled);
     EXPECT_TRUE(book.best_ask());
     EXPECT_FALSE(book.contains(3));
@@ -143,6 +140,7 @@ TEST_F(BookTest, LimitStop){
     EXPECT_EQ(book.best_bid(), 1004);
 }
 
+
 TEST_F(BookTest, CancelFamily){
     auto report = book.cancel(3);
 
@@ -159,20 +157,34 @@ TEST_F(BookTest, CancelFamily){
     
     EXPECT_EQ(book.best_bid(), 1002);
     EXPECT_EQ(book.best_ask(), 1004);
-    EXPECT_TRUE(book.check_invariants());
+    
+    auto v = book.check_invariants(); 
+    EXPECT_FALSE(v.has_value()) << v.value_or("");
 
+    auto best_bid = book.best_bid();
+    auto best_ask = book.best_ask();
+    auto bid_size = book.bid_levels();
+    auto ask_size = book.ask_levels();
     report = book.cancel(99);
     EXPECT_FALSE(report);
+    
+    v = book.check_invariants(); 
+    EXPECT_FALSE(v.has_value()) << v.value_or("");
 
-    EXPECT_EQ(book.best_bid(), 1002);
-    EXPECT_EQ(book.best_ask(), 1004);
-    EXPECT_TRUE(book.check_invariants());
+    EXPECT_EQ(book.best_bid(), best_bid);
+    EXPECT_EQ(book.best_ask(), best_ask);
+    EXPECT_EQ(book.bid_levels(), bid_size);
+    EXPECT_EQ(book.ask_levels(), ask_size);
 }
 
 TEST_F(BookTest, Tombstone){
     auto report = book.cancel(5);
+    EXPECT_EQ(report->id, 5);
     EXPECT_FALSE(book.contains(5));
     EXPECT_EQ(book.ask_levels(), 2);
+    
+    auto v = book.check_invariants(); 
+    EXPECT_FALSE(v.has_value()) << v.value_or("");
 
     auto report2 = book.add(9, 1004, 80, lob::Side::Buy);
 
@@ -182,10 +194,9 @@ TEST_F(BookTest, Tombstone){
     EXPECT_FALSE(book.contains(6));
     EXPECT_EQ(report2[0].reports.size(), 1);
     EXPECT_EQ(report2[0].reports[0].id, 6);
-    EXPECT_TRUE(book.check_invariants());
 }
 
-TEST_F(BookTest, CancelCross){
+TEST_F(BookTest, CancelKillsLevel_ThenAddRests){
     auto report = book.cancel(5);
     report = book.cancel(6);
     EXPECT_EQ(book.best_ask(), 1005);
@@ -197,7 +208,21 @@ TEST_F(BookTest, CancelCross){
 }
 
 TEST_F(BookTest, DuplicateIds){
-    EXPECT_DEBUG_DEATH(book.add(3, 1005, 10, lob::Side::Sell), ".*");
+    std::vector<lob::ExecutionReport> x;
+    EXPECT_DEBUG_DEATH(x = book.add(3, 1005, 10, lob::Side::Sell), ".*");
 }
+
+TEST_F(BookTest, CancelAfterFill){
+    auto x=book.add(9, 1004, 20, lob::Side::Buy );
+    EXPECT_TRUE(x.begin()->reports.begin()->fully_filled);
+    EXPECT_FALSE(book.cancel(5));
+
+    auto x1 = book.cancel(3);
+    EXPECT_FALSE(book.contains(3));
+    EXPECT_FALSE(book.cancel(3));
+}
+
+
+
 
 

@@ -1,9 +1,6 @@
 #include "Book.hpp"
-#include "Units.hpp"
 #include <cassert>
-#include <cstddef>
-#include <print>
-#include <utility>
+#include <format>
 
 namespace lob {
 
@@ -101,7 +98,9 @@ namespace lob {
     }
 
     std::optional<Quantity> Book::resting_quantity(OrderId id) const{
-        if (auto order = id_map_.find(id); order != id_map_.end()){
+        auto order = id_map_.find(id);
+        if ( order != id_map_.end()){
+            assert(order->second.order_ != nullptr);
             return order->second.order_->quantity();
         }
         return {};
@@ -121,49 +120,56 @@ namespace lob {
         return {};
     }
 
-    bool Book::check_map_validity() const{
-        for(auto order : id_map_){
-            if(order.second.order_->quantity() == 0){
-                return false;
+    std::optional<std::string> Book::check_map_validity() const{
+        for(const auto& order : id_map_){
+            if(order.second.order_->is_filled()){
+                return std::format("Error: Cancelled/Fulfilled OrderId# {} was not removed from id_map_", order.first);
             }
         }
 
         for (auto level = buy_.begin(); level != buy_.end(); level++) {
             auto &priceLevel = level->second;
-            if(priceLevel.is_exhausted()) return false;
             for(auto order = priceLevel.begin(); order != priceLevel.end(); order++){
-                if (!id_map_.contains(order->id())) {
-                    return false;
+                if(!order->is_filled() && !id_map_.contains(order->id())){
+                    return std::format("Error: Live OrderId# {} was not found in the id_map_", order->id());
                 }
             }
         }
+
         for (auto level = sell_.begin(); level != sell_.end(); level++) {
             auto &priceLevel = level->second;
-            if(priceLevel.is_exhausted()) return false;
             for(auto order = priceLevel.begin(); order != priceLevel.end(); order++){
-                if (!id_map_.contains(order->id())) {
-                    return false;
+                if(!order->is_filled() && !id_map_.contains(order->id())){
+                    return std::format("Error: Live OrderId# {} was not found in the id_map_", order->id());
                 }
             }
         }
-        return true;        
+        return {};        
     }
 
-    bool Book::check_levels_validity() const{
+    std::optional<std::string> Book::check_levels_validity() const{
         if (!buy_.empty() && !sell_.empty()){
             if(buy_.begin()->first >=  sell_.begin()->first)
-                return false;
+                return "Error: Best bid >= Best Ask";
         }
         for (auto level = buy_.begin(); level != buy_.end(); level++) {
-            if(level->second.is_exhausted()) return false;
+            if(level->second.is_exhausted()) 
+                return std::format("Error: Exhausted Price Level ${} was not removed from buy_", level->first);
         }
         for (auto level = sell_.begin(); level != sell_.end(); level++) {
-            if(level->second.is_exhausted()) return false;
+            if(level->second.is_exhausted()) 
+                return std::format("Error: Exhausted Price Level ${} was not removed from sell_", level->first);
         }
-        return true;        
+        return {};        
     }
 
-    bool Book::check_invariants() const{
-        return (check_map_validity() && check_levels_validity());
+    std::optional<std::string> Book::check_invariants() const{
+        if(auto check = check_map_validity(); check){
+            return check;
+        }
+        if(auto check = check_levels_validity(); check){
+            return check;
+        }
+        return {};
     }
 } // namespace lob

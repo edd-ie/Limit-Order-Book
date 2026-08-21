@@ -52,8 +52,8 @@ namespace lob{
             [[nodiscard]] std::optional<Quantity> resting_quantity(OrderId id) const;
             [[nodiscard]] std::optional<Quantity> level_quantity(Side side, Price price)const;
 
-            [[nodiscard]] bool check_invariants() const;
-            [[nodiscard]] bool check_map_validity() const;
-            [[nodiscard]] bool check_levels_validity() const;
+            [[nodiscard]] std::optional<std::string>  check_invariants() const;
+            [[nodiscard]] std::optional<std::string>  check_map_validity() const;
+            [[nodiscard]] std::optional<std::string>  check_levels_validity() const;
     };
 }
