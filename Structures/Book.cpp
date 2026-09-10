@@ -125,6 +125,9 @@ namespace lob {
             if(order.second.order_->is_filled()){
                 return std::format("Error: Cancelled/Fulfilled OrderId# {} was not removed from id_map_", order.first);
             }
+            if(order.second.order_->price() != order.second.level_->price()){
+                return std::format("Error: OrderId# {} price {} was found in wrong PriceLevel {}!", order.first, order.second.order_->price(), order.second.level_->price());
+            }
         }
 
         for (auto level = buy_.begin(); level != buy_.end(); level++) {
