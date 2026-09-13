@@ -218,6 +218,7 @@ TEST_F(BookTest, CancelAfterFill){
     EXPECT_FALSE(book.cancel(5));
 
     auto x1 = book.cancel(3);
+    EXPECT_EQ(x1->id, 3);
     EXPECT_FALSE(book.contains(3));
     EXPECT_FALSE(book.cancel(3));
 }

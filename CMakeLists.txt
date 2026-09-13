@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.31.6)
+cmake_minimum_required(VERSION 3.25)
 
 project(LimitOrderBook
     VERSION 1.0.0
@@ -19,6 +19,9 @@ FetchContent_Declare(
 )
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
+# Enable CTest integration
+enable_testing()
+include(GoogleTest)
 
 # Suppress Clang warning on GoogleTest targets
 if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
@@ -29,23 +32,18 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     endforeach()
 endif()
 
-# Enable CTest integration
-enable_testing()
-include(GoogleTest)
-
 # Add source libraries and tests
 add_subdirectory(Structures)
 
 # Production Executable
 add_executable(LimitOrderBook main.cpp)
 
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    if(MSVC)
-        target_compile_options(LimitOrderBook PRIVATE /W4 /WX /O2)
-    else()
-        target_compile_options(LimitOrderBook PRIVATE -Wall -Wextra -Werror -O3)
-    endif()
+if(MSVC)
+    target_compile_options(LimitOrderBook PRIVATE /W4 /WX)
+else()
+    target_compile_options(LimitOrderBook PRIVATE -Wall -Wextra -Werror)
 endif()
+
 
 target_link_libraries(LimitOrderBook PRIVATE Structures)
 

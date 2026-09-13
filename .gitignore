@@ -4,3 +4,5 @@ build
 .dockerignore
 compile_*
 TODO*
+vcpkg*
+compile_*

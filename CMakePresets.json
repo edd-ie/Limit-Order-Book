@@ -1,17 +1,18 @@
 {
-  "version": 10,
+  "version": 6,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 16,
-    "patch": 6
+    "minor": 25
   },
   "configurePresets": [
     {
       "name": "default",
       "displayName": "Default Config",
-      "description": "Default build using Ninja and Clang-CL",
+      "description": "Default build using Ninja",
+      "hidden": true,
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build/default",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "installDir": "${sourceDir}/install/${presetName}",
       "cacheVariables": {
         "CMAKE_CXX_STANDARD": "23",
         "CMAKE_CXX_STANDARD_REQUIRED": "ON",
@@ -21,17 +22,89 @@
     {
       "name": "windows",
       "inherits": "default",
+      "displayName": "Windows-only configuration",
+      "description": "This build is only available on Windows",
       "cacheVariables": {
-        "CMAKE_C_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
-        "CMAKE_CXX_COMPILER": "C:/Program Files/LLVM/bin/clang-cl.exe",
-        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+        "CMAKE_C_COMPILER": "clang-cl",
+        "CMAKE_CXX_COMPILER": "clang-cl",
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "win-release",
+      "displayName": "win Release",
+      "description": "Sets release build type",
+      "inherits": "windows",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-debug",
+      "displayName": "Linux Debug",
+      "description": "Sets GCC",
+      "inherits": "default",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "CMAKE_BUILD_TYPE": "Debug"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux-release",
+      "displayName": "Linux Release",
+      "description": "Sets release build type",
+      "inherits": "linux-debug",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "name": "linux-asan",
+      "displayName": "Linux debug + ASan",
+      "inherits": "linux-debug",
+      "cacheVariables": {
+        "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
+        "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
       }
     }
   ],
   "buildPresets": [
     {
       "name": "windows",
+      "displayName": "windows-debug",
       "configurePreset": "windows"
+    },
+    {
+      "name": "linux",
+      "displayName": "linux-debug",
+      "configurePreset": "linux-debug",
+      "description": "Vanilla build"
+    },
+    {
+      "name": "win-release",
+      "displayName": "windows-release",
+      "configurePreset": "win-release"
+    },
+    {
+      "name": "linux-release",
+      "displayName": "linux-release",
+      "configurePreset": "linux-release"
+    },
+    {
+      "name": "linux-asan",
+      "displayName": "linux-asan",
+      "configurePreset": "linux-asan"
     }
   ]
 }

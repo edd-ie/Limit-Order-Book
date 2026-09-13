@@ -18,11 +18,9 @@ target_sources(Structures
             Units.hpp
 )
 
-# Apply warning and optimization flags to the library
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-    if(MSVC)
-        target_compile_options(Structures PRIVATE /W4 /WX /O2)
-    else()
-        target_compile_options(Structures PRIVATE -Wall -Wextra -Werror -O3)
-    endif()
+# Apply warnings to the library
+if(MSVC)
+    target_compile_options(Structures PRIVATE /W4 /WX)
+else()
+    target_compile_options(Structures PRIVATE -Wall -Wextra -Werror)
 endif()
