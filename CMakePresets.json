@@ -36,8 +36,8 @@
       }
     },
     {
-      "name": "win-release",
-      "displayName": "win Release",
+      "name": "windows-release",
+      "displayName": "windows Release",
       "description": "Sets release build type",
       "inherits": "windows",
       "cacheVariables": {
@@ -45,7 +45,7 @@
       }
     },
     {
-      "name": "linux-debug",
+      "name": "linux",
       "displayName": "Linux Debug",
       "description": "Sets GCC",
       "inherits": "default",
@@ -64,7 +64,7 @@
       "name": "linux-release",
       "displayName": "Linux Release",
       "description": "Sets release build type",
-      "inherits": "linux-debug",
+      "inherits": "linux",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release"
       }
@@ -72,7 +72,7 @@
     {
       "name": "linux-asan",
       "displayName": "Linux debug + ASan",
-      "inherits": "linux-debug",
+      "inherits": "linux",
       "cacheVariables": {
         "CMAKE_CXX_FLAGS": "-fsanitize=address,undefined -fno-omit-frame-pointer",
         "CMAKE_EXE_LINKER_FLAGS": "-fsanitize=address,undefined"
@@ -83,18 +83,19 @@
     {
       "name": "windows",
       "displayName": "windows-debug",
-      "configurePreset": "windows"
+      "configurePreset": "windows",
+      "description": "Clang debug build"
+    },
+    {
+      "name": "windows-release",
+      "displayName": "windows-release",
+      "configurePreset": "windows-release"
     },
     {
       "name": "linux",
       "displayName": "linux-debug",
-      "configurePreset": "linux-debug",
-      "description": "Vanilla build"
-    },
-    {
-      "name": "win-release",
-      "displayName": "windows-release",
-      "configurePreset": "win-release"
+      "configurePreset": "linux",
+      "description": "GCC debug build"
     },
     {
       "name": "linux-release",
